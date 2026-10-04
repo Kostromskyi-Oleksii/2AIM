@@ -158,29 +158,52 @@ function cleanAnswer(value) {
   return value.trim().replace(/[−–—]/g, "-");
 }
 
+// Формули LaTeX з відповідей AI: \( … \), \[ … \], $$ … $$, $ … $. Їх не чіпаємо — малює MathJax.
+const LATEX = /(\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]|\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/;
+
+// Рядок тексту → вузли: формули LaTeX як є, решта — через mathNodes (2^3 → степінь, * → ×).
+function richNodes(text) {
+  const strip = (s) => s.replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1").replace(/`([^`]+)`/g, "$1");
+  return text.split(LATEX).flatMap((part, i) => {
+    if (!part) return [];
+    return i % 2 === 1 ? [document.createTextNode(part)] : mathNodes(strip(part));
+  });
+}
+
+// Просимо MathJax відмалювати формули в контейнері (якщо скрипт ще вантажиться — він зробить це сам).
+function typeset(container) {
+  const mj = window.MathJax;
+  if (!mj || !mj.startup || !mj.startup.promise) return;
+  mj.startup.promise
+    .then(() => mj.typesetPromise([container]))
+    .catch(() => { /* без формул текст лишається читабельним */ });
+}
+
 // Простий рендер тексту від AI (markdown-подібного) у DOM — без innerHTML.
 function renderAiText(container, text) {
   container.replaceChildren();
   let list = null;
-  const strip = (s) => s.replace(/\*\*(.+?)\*\*/g, "$1").replace(/__(.+?)__/g, "$1").replace(/`([^`]+)`/g, "$1");
-  for (const raw of String(text).split(/\r?\n/)) {
+  // Формули на кілька рядків збираємо в один рядок, щоб не розірвати їх.
+  const source = String(text).replace(/\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$/g, (m) => m.replace(/\s*\n\s*/g, " "));
+  for (const raw of source.split(/\r?\n/)) {
     const line = raw.trim();
     if (!line || /^[-*_]{3,}$/.test(line)) { list = null; continue; }
-    const heading = line.match(/^#{1,6}\s+(.*)$/) || line.match(/^\*\*(.+?)\*\*:?$/);
+    const heading = line.match(/^#{1,6}\s+(.*)$/) || line.match(/^\*\*([^*]+?)\*\*:?$/);
     const item = line.match(/^(?:[-*•]|\d+[.)])\s+(.*)$/);
     if (heading) {
       list = null;
-      container.append(el("h3", {}, mathNodes(strip(heading[1]))));
+      container.append(el("h3", {}, richNodes(heading[1])));
     } else if (item) {
       if (!list) { list = el("ul"); container.append(list); }
-      list.append(el("li", {}, mathNodes(strip(item[1]))));
+      list.append(el("li", {}, richNodes(item[1])));
     } else if (line.startsWith("|")) {
       continue; // таблиці з AI пропускаємо
     } else {
       list = null;
-      container.append(el("p", {}, mathNodes(strip(line))));
+      container.append(el("p", {}, richNodes(line)));
     }
   }
+  typeset(container);
 }
 
 // ---------- API ----------

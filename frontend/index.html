@@ -6,6 +6,18 @@
   <title>NMT Gap AI — знайди свої пробіли з математики</title>
   <meta name="description" content="Коротка адаптивна діагностика з математики для підготовки до НМТ: знаходить слабкі теми та складає план повторення.">
   <link rel="stylesheet" href="style.css">
+  <!-- MathJax: малює LaTeX-формули з відповідей AI (\( … \), \[ … \], $ … $). -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"], ["$", "$"]],
+        displayMath: [["\\[", "\\]"], ["$$", "$$"]]
+      },
+      options: { skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code", "input"] },
+      chtml: { scale: 1.05 }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body class="ng-paper">
 
