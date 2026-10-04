@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="uk" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NMT Gap AI — знайди свої пробіли з математики</title>
+  <meta name="description" content="Коротка адаптивна діагностика з математики для підготовки до НМТ: знаходить слабкі теми та складає план повторення.">
+  <link rel="stylesheet" href="style.css">
+  <!-- MathJax: малює LaTeX-формули з відповідей AI (\( … \), \[ … \], $ … $). -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"], ["$", "$"]],
+        displayMath: [["\\[", "\\]"], ["$$", "$$"]]
+      },
+      options: { skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code", "input"] },
+      chtml: { scale: 1.05 }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="ng-paper">
+
+<header class="app-header">
+  <a class="app-logo" href="#" data-action="home">NMT Gap AI</a>
+  <button class="ng-btn ng-btn--ghost theme-toggle" type="button" data-action="toggle-theme" aria-label="Змінити тему">Темна тема</button>
+</header>
+
+<main class="app-main" id="app">
+
+  <!-- 1. Головна -->
+  <section class="screen" id="screen-home" tabindex="-1">
+    <div class="hero">
+      <h1 class="t-display">Підготуйся до НМТ розумніше</h1>
+      <p class="t-lead">Пройди коротку діагностику та дізнайся, які теми тобі потрібно повторити — і з чого почати.</p>
+      <div class="hero__steps" aria-label="Як це працює">
+        <span class="ng-badge ng-badge--neutral">1 · Діагностика</span>
+        <span class="ng-badge ng-badge--neutral">2 · Аналіз помилок</span>
+        <span class="ng-badge ng-badge--neutral">3 · План</span>
+        <span class="ng-badge ng-badge--neutral">4 · Тренування</span>
+        <span class="ng-badge ng-badge--neutral">5 · Повторна перевірка</span>
+      </div>
+      <div><button class="ng-btn ng-btn--primary ng-btn--lg" type="button" data-action="start">Почати діагностику</button></div>
+      <p class="t-caption">5 тем: дроби, відсотки, степені, лінійні та квадратні рівняння. Персональні дані не збираються.</p>
+    </div>
+  </section>
+
+  <!-- 2. Діагностика / Повторна перевірка -->
+  <section class="screen" id="screen-quiz" tabindex="-1" hidden>
+    <div class="ng-progress">
+      <div class="ng-progress__head"><span id="quiz-counter">Питання 1</span><span id="quiz-mode">Діагностика</span></div>
+      <div class="ng-progress__track"><div class="ng-progress__fill" id="quiz-progress" style="width:0%"></div></div>
+    </div>
+
+    <form class="ng-card ng-question" id="quiz-form" autocomplete="off" novalidate>
+      <div class="ng-question__meta"><span id="quiz-number">Питання 1</span><span class="ng-badge ng-badge--neutral" id="quiz-topic">—</span></div>
+      <p class="ng-question__prompt" id="quiz-prompt">Обчисли:</p>
+      <div class="ng-question__task" id="quiz-task" aria-live="polite"></div>
+      <label class="ng-field" id="quiz-field">
+        <span class="ng-field__label">Твоя відповідь</span>
+        <input class="ng-input" id="quiz-input" inputmode="text" placeholder="Введи відповідь" autocomplete="off">
+        <span class="ng-field__note" id="quiz-note" hidden></span>
+      </label>
+      <p class="t-caption" id="quiz-hint-format">Дріб пиши як 3/4, кілька коренів — через крапку з комою: −3;3</p>
+      <div class="ng-question__actions">
+        <button class="ng-btn ng-btn--ghost" type="button" data-action="dont-know">Не знаю</button>
+        <button class="ng-btn ng-btn--primary" type="submit" id="quiz-submit" disabled>Далі</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- 3. Результат -->
+  <section class="screen" id="screen-result" tabindex="-1" hidden>
+    <h1 class="t-h1">Твій результат</h1>
+    <div class="ng-card section">
+      <div class="ng-meters" id="result-meters"></div>
+    </div>
+    <div class="section" id="result-mistakes"></div>
+    <div class="section" id="result-tree"></div>
+    <div class="actions">
+      <button class="ng-btn ng-btn--secondary" type="button" data-action="start">Пройти ще раз</button>
+      <button class="ng-btn ng-btn--primary" type="button" data-action="plan" id="result-to-plan">До плану</button>
+    </div>
+  </section>
+
+  <!-- 4. План -->
+  <section class="screen" id="screen-plan" tabindex="-1" hidden>
+    <h1 class="t-h1">Твій план повторення</h1>
+    <p class="t-lead ng-muted" id="plan-sub">Що повторити, в якому порядку і коли перевірити себе.</p>
+    <div class="ng-card ai-text" id="plan-body"><div class="loading">AI складає план…</div></div>
+    <div class="actions">
+      <button class="ng-btn ng-btn--secondary" type="button" data-action="result">Назад до результату</button>
+      <button class="ng-btn ng-btn--primary" type="button" data-action="train">Почати тренування</button>
+    </div>
+  </section>
+
+  <!-- 5. Тренування -->
+  <section class="screen" id="screen-train" tabindex="-1" hidden>
+    <div class="section">
+      <span class="t-caption">Тренування</span>
+      <h1 class="t-h1" id="train-topic">—</h1>
+    </div>
+
+    <form class="ng-card ng-question" id="train-form" autocomplete="off" novalidate>
+      <div class="ng-question__meta"><span id="train-number">Завдання 1</span><span class="ng-badge ng-badge--neutral" id="train-attempts">Спроба 1</span></div>
+      <p class="ng-question__prompt" id="train-prompt">Обчисли:</p>
+      <div class="ng-question__task" id="train-task"></div>
+      <label class="ng-field" id="train-field">
+        <span class="ng-field__label">Твоя відповідь</span>
+        <input class="ng-input" id="train-input" placeholder="Введи відповідь" autocomplete="off">
+        <span class="ng-field__note" id="train-note" hidden></span>
+      </label>
+      <div class="ng-question__actions">
+        <button class="ng-btn ng-btn--ghost" type="button" data-action="skip-train">Далі без відповіді</button>
+        <button class="ng-btn ng-btn--primary" type="submit" id="train-submit">Перевірити</button>
+      </div>
+    </form>
+
+    <div id="train-hints" class="section" aria-live="polite"></div>
+
+    <div class="ng-card section">
+      <h2 class="t-h2">Запитай репетитора</h2>
+      <div class="ng-chat" id="chat" aria-live="polite"></div>
+      <form class="ask-row" id="chat-form" autocomplete="off">
+        <input class="ng-input" id="chat-input" placeholder="Твоє питання" aria-label="Повідомлення репетитору">
+        <button class="ng-btn ng-btn--secondary" type="submit">Надіслати</button>
+      </form>
+    </div>
+
+    <div class="actions">
+      <button class="ng-btn ng-btn--secondary" type="button" data-action="plan">До плану</button>
+      <button class="ng-btn ng-btn--primary" type="button" data-action="recheck">Повторна перевірка</button>
+    </div>
+  </section>
+
+  <!-- 6. Підсумок повторної перевірки -->
+  <section class="screen" id="screen-delta" tabindex="-1" hidden>
+    <h1 class="t-h1">Перевіримо, чи закріпилася тема</h1>
+    <div class="section" id="delta-list"></div>
+    <p class="t-lead" id="delta-verdict"></p>
+    <div class="actions">
+      <button class="ng-btn ng-btn--secondary" type="button" data-action="train">Ще потренуватися</button>
+      <button class="ng-btn ng-btn--primary" type="button" data-action="start">Нова діагностика</button>
+    </div>
+  </section>
+
+  <div class="notice" id="error" role="alert" hidden></div>
+</main>
+
+<script src="config.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
