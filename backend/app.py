@@ -53,8 +53,16 @@ def api_check_answer(data: AnswerSubmission):
 @app.post("/next_question")
 def api_next_question(data: DiagnosticState):
     question = get_next_question(data.topic, data.current_difficulty, data.was_correct)
+    
     if question:
-        return question
+        safe_question = {
+            "id": question["id"],
+            "question": question["question"],
+            "topic": question["topic"],
+            "difficulty": question["difficulty"]
+        }
+        return safe_question
+        
     return {"message": "Завдання закінчилися"}
 
 @app.post("/analyze")
