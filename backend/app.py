@@ -4,7 +4,7 @@ from groq import Groq
 import os
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware 
-from typing import List
+from typing import List, Optional
 
 from backend.diagnosis import check_answer, analyze_results, get_next_question
 
@@ -24,6 +24,7 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     question: str
     student_answer: str
+    mode: Optional[str] = "hint"  
 
 class AnswerSubmission(BaseModel):
     question_id: int
@@ -35,11 +36,13 @@ class DiagnosticState(BaseModel):
     was_correct: bool
 
 class AnalyzeRequest(BaseModel):
-    user_answers: List[dict] 
+    user_answers: List[dict]
 
 class PlanRequest(BaseModel):
     weak_topics: List[str]
     misconceptions: List[str]
+
+
 
 @app.get("/")
 def read_root():
@@ -49,7 +52,6 @@ def read_root():
 def api_check_answer(data: AnswerSubmission):
     result = check_answer(data.question_id, data.user_answer)
     return result
-
 @app.post("/next_question")
 def api_next_question(data: DiagnosticState):
     question = get_next_question(data.topic, data.current_difficulty, data.was_correct)
@@ -64,7 +66,6 @@ def api_next_question(data: DiagnosticState):
         return safe_question
         
     return {"message": "Завдання закінчилися"}
-
 @app.post("/analyze")
 def api_analyze(data: AnalyzeRequest):
     results = analyze_results(data.user_answers)
@@ -72,12 +73,19 @@ def api_analyze(data: AnalyzeRequest):
 
 @app.post("/ask_ai")
 def ask_ai(data: ChatRequest):
-    system_prompt = """
-    Ти — досвідчений репетитор з математики. 
-    Твоя мета — допомогти учневі знайти помилку самостійно. 
-    НІКОЛИ не давай готову правильну відповідь. Став лише одне навідне запитання.
-    """
-    user_prompt = f"Завдання: {data.question}. Учень відповів: {data.student_answer}. Допоможи йому."
+    if data.mode == "chat":
+        system_prompt = """
+        Ти — досвідчений репетитор з математики.
+        Поясни правило чи крок, наведи простий приклад, але НІКОЛИ не розв'язуй саме це завдання й не називай правильну відповідь.
+        """
+    else:
+        system_prompt = """
+        Ти — досвідчений репетитор з математики. 
+        Твоя мета — допомогти учневі знайти помилку самостійно. 
+        НІКОЛИ не давай готову правильну відповідь. Став лише одне навідне запитання.
+        """
+        
+    user_prompt = f"Завдання: {data.question}. Повідомлення від учня: {data.student_answer}. Допоможи йому."
 
     try:
         response = client.chat.completions.create(
@@ -91,7 +99,6 @@ def ask_ai(data: ChatRequest):
         return {"ai_hint": response.choices[0].message.content}
     except Exception as e:
         return {"error": str(e)}
-
 @app.post("/generate_plan")
 def generate_plan(data: PlanRequest):
     system_prompt = """
@@ -100,7 +107,7 @@ def generate_plan(data: PlanRequest):
     Склади короткий, чіткий і персоналізований план повторення на 2-3 дні. 
     Пиши українською мовою, звертайся на "ти", без зайвої води.
     """
-
+    
     user_prompt = f"Слабкі теми: {', '.join(data.weak_topics)}. Типові помилки: {', '.join(data.misconceptions)}."
 
     try:
