@@ -23,18 +23,499 @@ const STATUS = [
   { min: 0,  key: "gap",    icon: "!", label: "Пробіл" },
 ];
 
-// Дзеркало data/topics.py, data/misconceptions.py, data/skills.py (бекенд поки не віддає їх через API).
-// Якщо змінюєте дані на бекенді — оновіть і тут.
-const TOPICS = {
-  fractions: "Дроби",
-  percentages: "Відсотки",
-  powers: "Степені",
-  linear_equations: "Лінійні рівняння",
-  quadratic_equations: "Квадратні рівняння",
+// Згенеровано з data/ (topics.py, extra_topics.py, skills.py, misconceptions.py).
+// Використовується, лише якщо бекенд не відповідає на GET /meta.
+const FALLBACK_TOPICS = {
+  "fractions": "Дроби",
+  "percentages": "Відсотки",
+  "powers": "Степені",
+  "linear_equations": "Лінійні рівняння",
+  "quadratic_equations": "Квадратні рівняння",
+  "negative_numbers": "Відʼємні числа",
+  "divisibility": "Подільність чисел",
+  "decimals": "Десяткові дроби",
+  "proportions": "Відношення та пропорції",
+  "absolute_value": "Модуль числа",
+  "radicals": "Квадратні корені",
+  "algebraic_expressions": "Буквені вирази",
+  "polynomials": "Многочлени",
+  "identities": "Формули скороченого множення",
+  "factorization": "Розкладання на множники",
+  "rational_expressions": "Раціональні вирази",
+  "linear_inequalities": "Лінійні нерівності",
+  "quadratic_inequalities": "Квадратні нерівності",
+  "systems_equations": "Системи рівнянь",
+  "arithmetic_progressions": "Арифметична прогресія",
+  "geometric_progressions": "Геометрична прогресія",
+  "function_values": "Значення функції",
+  "linear_function": "Лінійна функція",
+  "quadratic_function": "Квадратична функція",
+  "exponential_equations": "Показникові рівняння",
+  "logarithms": "Логарифми",
+  "trigonometry": "Тригонометрія",
+  "triangles": "Трикутники та кути",
+  "pythagorean_theorem": "Теорема Піфагора",
+  "quadrilaterals": "Чотирикутники",
+  "circles": "Коло та круг",
+  "coordinate_geometry": "Координати на площині",
+  "solid_geometry": "Стереометрія",
+  "probability": "Теорія ймовірностей",
+  "statistics": "Статистика"
 };
-const TOPIC_ORDER = Object.keys(TOPICS);
 
-const MISCONCEPTIONS = {
+const SECTIONS = [
+  {
+    "id": "core",
+    "name": "Швидка діагностика",
+    "note": "5 ключових тем НМТ",
+    "topics": [
+      "fractions",
+      "percentages",
+      "powers",
+      "linear_equations",
+      "quadratic_equations"
+    ]
+  },
+  {
+    "id": "arithmetic",
+    "name": "Арифметика",
+    "note": null,
+    "topics": [
+      "fractions",
+      "percentages",
+      "negative_numbers",
+      "divisibility",
+      "decimals",
+      "proportions",
+      "absolute_value"
+    ]
+  },
+  {
+    "id": "algebra",
+    "name": "Вирази й перетворення",
+    "note": null,
+    "topics": [
+      "powers",
+      "radicals",
+      "algebraic_expressions",
+      "polynomials",
+      "identities",
+      "factorization",
+      "rational_expressions"
+    ]
+  },
+  {
+    "id": "equations",
+    "name": "Рівняння й нерівності",
+    "note": null,
+    "topics": [
+      "linear_equations",
+      "quadratic_equations",
+      "linear_inequalities",
+      "quadratic_inequalities",
+      "systems_equations",
+      "exponential_equations",
+      "logarithms"
+    ]
+  },
+  {
+    "id": "functions",
+    "name": "Функції та прогресії",
+    "note": null,
+    "topics": [
+      "function_values",
+      "linear_function",
+      "quadratic_function",
+      "arithmetic_progressions",
+      "geometric_progressions"
+    ]
+  },
+  {
+    "id": "geometry",
+    "name": "Геометрія й тригонометрія",
+    "note": null,
+    "topics": [
+      "triangles",
+      "pythagorean_theorem",
+      "quadrilaterals",
+      "circles",
+      "coordinate_geometry",
+      "solid_geometry",
+      "trigonometry"
+    ]
+  },
+  {
+    "id": "probability",
+    "name": "Ймовірність і статистика",
+    "note": null,
+    "topics": [
+      "probability",
+      "statistics"
+    ]
+  }
+];
+
+const FALLBACK_SKILLS = {
+  "fractions_basic": {
+    "name": "Основні дії з дробами",
+    "prerequisites": []
+  },
+  "percent_basic": {
+    "name": "Основні дії з відсотками",
+    "prerequisites": []
+  },
+  "powers_basic": {
+    "name": "Основні властивості степенів",
+    "prerequisites": []
+  },
+  "multiplication_same_base": {
+    "name": "Множення степенів з однаковою основою",
+    "prerequisites": [
+      "powers_basic"
+    ]
+  },
+  "negative_numbers": {
+    "name": "Дії з відʼємними числами",
+    "prerequisites": []
+  },
+  "linear_equation_basic": {
+    "name": "Лінійні рівняння",
+    "prerequisites": [
+      "negative_numbers"
+    ]
+  },
+  "quadratic_equation_basic": {
+    "name": "Квадратні рівняння",
+    "prerequisites": [
+      "powers_basic",
+      "negative_numbers",
+      "linear_equation_basic"
+    ]
+  },
+  "divisibility_basic": {
+    "name": "Дільники, НСД та НСК",
+    "prerequisites": []
+  },
+  "decimals_basic": {
+    "name": "Операції з десятковими дробами",
+    "prerequisites": [
+      "fractions_basic"
+    ]
+  },
+  "proportions_basic": {
+    "name": "Складання і розвʼязування пропорцій",
+    "prerequisites": [
+      "fractions_basic"
+    ]
+  },
+  "absolute_value_basic": {
+    "name": "Обчислення виразів із модулем",
+    "prerequisites": [
+      "negative_numbers"
+    ]
+  },
+  "radicals_basic": {
+    "name": "Обчислення квадратних коренів",
+    "prerequisites": [
+      "powers_basic"
+    ]
+  },
+  "algebraic_expressions_basic": {
+    "name": "Підстановка значень у буквені вирази",
+    "prerequisites": [
+      "negative_numbers"
+    ]
+  },
+  "polynomials_basic": {
+    "name": "Дії з многочленами",
+    "prerequisites": [
+      "algebraic_expressions_basic"
+    ]
+  },
+  "identities_basic": {
+    "name": "Квадрат суми та різниця квадратів",
+    "prerequisites": [
+      "polynomials_basic"
+    ]
+  },
+  "factorization_basic": {
+    "name": "Винесення множника та різниця квадратів",
+    "prerequisites": [
+      "identities_basic"
+    ]
+  },
+  "rational_expressions_basic": {
+    "name": "Перетворення раціональних виразів",
+    "prerequisites": [
+      "fractions_basic",
+      "factorization_basic"
+    ]
+  },
+  "linear_inequalities_basic": {
+    "name": "Розвʼязування лінійних нерівностей",
+    "prerequisites": [
+      "linear_equation_basic"
+    ]
+  },
+  "quadratic_inequalities_basic": {
+    "name": "Інтервали знаків квадратного тричлена",
+    "prerequisites": [
+      "quadratic_equation_basic"
+    ]
+  },
+  "systems_equations_basic": {
+    "name": "Розвʼязування систем двох рівнянь",
+    "prerequisites": [
+      "linear_equation_basic"
+    ]
+  },
+  "arithmetic_progressions_basic": {
+    "name": "Формула n-го члена арифметичної прогресії",
+    "prerequisites": [
+      "linear_equation_basic"
+    ]
+  },
+  "geometric_progressions_basic": {
+    "name": "Формула n-го члена геометричної прогресії",
+    "prerequisites": [
+      "powers_basic"
+    ]
+  },
+  "function_values_basic": {
+    "name": "Обчислення значення функції за аргументом",
+    "prerequisites": [
+      "algebraic_expressions_basic"
+    ]
+  },
+  "linear_function_basic": {
+    "name": "Нулі та значення лінійної функції",
+    "prerequisites": [
+      "linear_equation_basic"
+    ]
+  },
+  "quadratic_function_basic": {
+    "name": "Вершина й екстремум параболи",
+    "prerequisites": [
+      "quadratic_equation_basic"
+    ]
+  },
+  "exponential_equations_basic": {
+    "name": "Зведення показникових рівнянь до спільної основи",
+    "prerequisites": [
+      "powers_basic"
+    ]
+  },
+  "logarithms_basic": {
+    "name": "Означення логарифма та прості рівняння",
+    "prerequisites": [
+      "powers_basic"
+    ]
+  },
+  "trigonometry_basic": {
+    "name": "Значення тригонометричних функцій особливих кутів",
+    "prerequisites": []
+  },
+  "triangles_basic": {
+    "name": "Сума кутів трикутника",
+    "prerequisites": []
+  },
+  "pythagorean_theorem_basic": {
+    "name": "Звʼязок катетів і гіпотенузи",
+    "prerequisites": [
+      "radicals_basic"
+    ]
+  },
+  "quadrilaterals_basic": {
+    "name": "Периметр та площа чотирикутників",
+    "prerequisites": []
+  },
+  "circles_basic": {
+    "name": "Радіус, діаметр і центральні кути",
+    "prerequisites": [
+      "triangles_basic"
+    ]
+  },
+  "coordinate_geometry_basic": {
+    "name": "Відстань та середина відрізка за координатами",
+    "prerequisites": [
+      "negative_numbers"
+    ]
+  },
+  "solid_geometry_basic": {
+    "name": "Обʼєм та площа поверхні просторових тіл",
+    "prerequisites": [
+      "powers_basic"
+    ]
+  },
+  "probability_basic": {
+    "name": "Класична ймовірність події",
+    "prerequisites": [
+      "fractions_basic"
+    ]
+  },
+  "statistics_basic": {
+    "name": "Середнє арифметичне, медіана й розмах",
+    "prerequisites": [
+      "negative_numbers"
+    ]
+  }
+};
+
+const FALLBACK_MISCONCEPTIONS = {
+  "negative_numbers_mistake": {
+    "topic": "negative_numbers",
+    "description": "Учень плутає додавання та віднімання відʼємних чисел.",
+    "recommendation": "Повторити правила дій з відʼємними числами."
+  },
+  "divisibility_mistake": {
+    "topic": "divisibility",
+    "description": "Учень плутає найменше спільне кратне з найбільшим спільним дільником.",
+    "recommendation": "Порівняти поняття НСД та НСК."
+  },
+  "decimals_mistake": {
+    "topic": "decimals",
+    "description": "Учень неправильно визначає положення десяткової коми під час множення.",
+    "recommendation": "Повторити множення десяткових дробів."
+  },
+  "proportions_mistake": {
+    "topic": "proportions",
+    "description": "Учень неправильно знаходить невідомий член пропорції.",
+    "recommendation": "Повторити основну властивість пропорції."
+  },
+  "absolute_value_mistake": {
+    "topic": "absolute_value",
+    "description": "Учень не враховує, що модуль числа невідʼємний.",
+    "recommendation": "Повторити означення модуля."
+  },
+  "radicals_mistake": {
+    "topic": "radicals",
+    "description": "Учень плутає квадрат числа з його квадратним коренем.",
+    "recommendation": "Повторити означення арифметичного квадратного кореня."
+  },
+  "algebraic_expressions_mistake": {
+    "topic": "algebraic_expressions",
+    "description": "Учень знаходить суму коефіцієнтів, але забуває підставити значення змінної.",
+    "recommendation": "Повторити підстановку значень у вираз."
+  },
+  "polynomials_mistake": {
+    "topic": "polynomials",
+    "description": "Учень обʼєднує коефіцієнти, але не враховує квадрат змінної.",
+    "recommendation": "Повторити зведення подібних доданків."
+  },
+  "identities_mistake": {
+    "topic": "identities",
+    "description": "Учень неправильно застосовує формулу різниці квадратів.",
+    "recommendation": "Повторити формули скороченого множення."
+  },
+  "factorization_mistake": {
+    "topic": "factorization",
+    "description": "Учень неправильно скорочує вираз після розкладання на множники.",
+    "recommendation": "Повторити розкладання різниці квадратів."
+  },
+  "rational_expressions_mistake": {
+    "topic": "rational_expressions",
+    "description": "Учень множить дроби замість додавання.",
+    "recommendation": "Повторити дії з раціональними дробами."
+  },
+  "linear_inequalities_mistake": {
+    "topic": "linear_inequalities",
+    "description": "Учень включає граничне число в строгу нерівність.",
+    "recommendation": "Повторити різницю між строгими й нестрогими нерівностями."
+  },
+  "quadratic_inequalities_mistake": {
+    "topic": "quadratic_inequalities",
+    "description": "Учень неправильно враховує граничні точки нерівності.",
+    "recommendation": "Повторити метод інтервалів."
+  },
+  "systems_equations_mistake": {
+    "topic": "systems_equations",
+    "description": "Учень знаходить суму змінних замість значення конкретної змінної.",
+    "recommendation": "Повторити метод додавання рівнянь."
+  },
+  "arithmetic_progressions_mistake": {
+    "topic": "arithmetic_progressions",
+    "description": "Учень додає різницю n разів замість n−1.",
+    "recommendation": "Повторити формулу n-го члена арифметичної прогресії."
+  },
+  "geometric_progressions_mistake": {
+    "topic": "geometric_progressions",
+    "description": "Учень сприймає геометричну прогресію як арифметичну.",
+    "recommendation": "Повторити поняття знаменника геометричної прогресії."
+  },
+  "function_values_mistake": {
+    "topic": "function_values",
+    "description": "Учень неправильно підставляє значення аргументу.",
+    "recommendation": "Повторити правило обчислення значень функції."
+  },
+  "linear_function_mistake": {
+    "topic": "linear_function",
+    "description": "Учень помиляється зі знаком під час пошуку нуля функції.",
+    "recommendation": "Повторити побудову та властивості лінійної функції."
+  },
+  "quadratic_function_mistake": {
+    "topic": "quadratic_function",
+    "description": "Учень забуває поділити коефіцієнт b на 2a для абсциси вершини.",
+    "recommendation": "Повторити формулу абсциси вершини параболи."
+  },
+  "exponential_equations_mistake": {
+    "topic": "exponential_equations",
+    "description": "Учень плутає показник степеня з результатом множення.",
+    "recommendation": "Повторити властивості степенів та показникових рівнянь."
+  },
+  "logarithms_mistake": {
+    "topic": "logarithms",
+    "description": "Учень неправильно зіставляє основу, показник і значення степеня.",
+    "recommendation": "Повторити означення логарифма."
+  },
+  "trigonometry_mistake": {
+    "topic": "trigonometry",
+    "description": "Учень плутає значення синуса кута 30° з одиницею.",
+    "recommendation": "Повторити таблицю значень sin, cos і tg."
+  },
+  "triangles_mistake": {
+    "topic": "triangles",
+    "description": "Учень неправильно знаходить третій кут трикутника.",
+    "recommendation": "Повторити теорему про суму кутів трикутника."
+  },
+  "pythagorean_theorem_mistake": {
+    "topic": "pythagorean_theorem",
+    "description": "Учень додає катети замість використання суми їхніх квадратів.",
+    "recommendation": "Повторити теорему Піфагора."
+  },
+  "quadrilaterals_mistake": {
+    "topic": "quadrilaterals",
+    "description": "Учень плутає площу прямокутника з його периметром.",
+    "recommendation": "Повторити формули периметра і площі."
+  },
+  "circles_mistake": {
+    "topic": "circles",
+    "description": "Учень плутає діаметр з радіусом.",
+    "recommendation": "Повторити звʼязок радіуса та діаметра."
+  },
+  "coordinate_geometry_mistake": {
+    "topic": "coordinate_geometry",
+    "description": "Учень додає різниці координат без застосування теореми Піфагора.",
+    "recommendation": "Повторити формулу відстані між точками."
+  },
+  "solid_geometry_mistake": {
+    "topic": "solid_geometry",
+    "description": "Учень плутає обʼєм куба з квадратом довжини ребра.",
+    "recommendation": "Повторити формули обʼєму та площі поверхні куба."
+  },
+  "probability_mistake": {
+    "topic": "probability",
+    "description": "Учень записує кількість сприятливих випадків замість їх відношення до загальної кількості.",
+    "recommendation": "Повторити класичне означення ймовірності."
+  },
+  "statistics_mistake": {
+    "topic": "statistics",
+    "description": "Учень плутає середнє арифметичне з найбільшим значенням.",
+    "recommendation": "Повторити обчислення середнього арифметичного."
+  }
+};
+
+// Тексти для 5 базових типових помилок — звернення на «ти» і правило, яке підсвічується маркером.
+const BASE_MISCONCEPTIONS = {
   add_denominators: {
     topic: "fractions",
     text: "Схоже, ти додаєш знаменники під час додавання дробів.",
@@ -62,20 +543,29 @@ const MISCONCEPTIONS = {
   },
 };
 
-const SKILLS = {
-  fractions_basic: { name: "Основні дії з дробами", prerequisites: [] },
-  percent_basic: { name: "Основні дії з відсотками", prerequisites: [] },
-  powers_basic: { name: "Основні властивості степенів", prerequisites: [] },
-  multiplication_same_base: { name: "Множення степенів з однаковою основою", prerequisites: ["powers_basic"] },
-  negative_numbers: { name: "Дії з відʼємними числами", prerequisites: [] },
-  linear_equation_basic: { name: "Лінійні рівняння", prerequisites: ["negative_numbers"] },
-  quadratic_equation_basic: { name: "Квадратні рівняння", prerequisites: ["powers_basic", "negative_numbers", "linear_equation_basic"] },
-};
+// Робочі довідники. Спочатку — вбудовані дані, після старту їх оновлює GET /meta (якщо бекенд його має).
+let TOPICS = { ...FALLBACK_TOPICS };
+let SKILLS = { ...FALLBACK_SKILLS };
+let MISCONCEPTIONS = { ...FALLBACK_MISCONCEPTIONS, ...BASE_MISCONCEPTIONS };
+
+// Текст і порада для типової помилки (базові мають text/rule, нові з бекенду — description/recommendation).
+function misText(m) {
+  return m.text || m.description || "";
+}
+function misAdviceNodes(m) {
+  if (m.rule) return ["Почни з правила: ", el("span", { class: "ng-mark" }, m.rule), "."];
+  return ["Порада: ", el("span", { class: "ng-mark" }, (m.recommendation || "").replace(/\.$/, "")), "."];
+}
+function misAdviceText(m) {
+  return m.rule ? `Повторити правило: ${m.rule}` : (m.recommendation || "Повторити основні правила теми").replace(/\.$/, "");
+}
 
 // ---------- Стан ----------
 
 const state = {
   mode: "diagnosis",          // "diagnosis" | "recheck"
+  section: "core",            // обраний розділ діагностики (SECTIONS)
+  topics: [],                 // теми обраного розділу
   answers: [],                // [{question_id, answer}] — для /analyze
   checks: [],                 // [{question, answer, correct, skill, misconception}]
   asked: new Set(),           // id вже показаних завдань
@@ -269,7 +759,9 @@ async function startDiagnosis() {
     topicIndex: 0, topicCount: 0, current: null, number: 0,
     result: null, recheckResult: null, planFor: null,
   });
-  $("quiz-mode").textContent = "Діагностика";
+  const section = currentSection();
+  state.topics = section.topics.filter((t) => TOPICS[t]);
+  $("quiz-mode").textContent = `Діагностика · ${section.name}`;
   show("quiz");
   setQuizLoading(true);
   try {
@@ -279,8 +771,8 @@ async function startDiagnosis() {
 
 // Перше завдання теми — середній рівень; якщо його немає — простий.
 async function loadTopicStart() {
-  while (state.topicIndex < TOPIC_ORDER.length) {
-    const topic = TOPIC_ORDER[state.topicIndex];
+  while (state.topicIndex < state.topics.length) {
+    const topic = state.topics[state.topicIndex];
     state.topicCount = 0;
     const q = (await questionAtLevel(topic, 2)) || (await questionAtLevel(topic, 1));
     if (q && !state.asked.has(q.id)) return presentQuestion(q);
@@ -303,7 +795,7 @@ function presentQuestion(q) {
 
   const progress = state.mode === "recheck"
     ? (state.number - 1) / total
-    : (state.topicIndex + (state.topicCount - 1) / QUESTIONS_PER_TOPIC) / TOPIC_ORDER.length;
+    : (state.topicIndex + (state.topicCount - 1) / QUESTIONS_PER_TOPIC) / state.topics.length;
   $("quiz-progress").style.width = `${Math.round(progress * 100)}%`;
 
   renderQuestion(q, $("quiz-prompt"), $("quiz-task"));
@@ -399,8 +891,8 @@ function renderResult() {
       const times = counts[id] > 1 ? `Ти ${counts[id]} рази припустився такої помилки. ` : "";
       box.append(el("div", { class: "ng-hint" },
         el("div", { class: "ng-hint__head" }, topicName(info.topic)),
-        el("p", { class: "ng-hint__text" }, times + info.text),
-        el("p", { class: "ng-hint__text" }, "Почни з правила: ", el("span", { class: "ng-mark" }, info.rule), ".")));
+        el("p", { class: "ng-hint__text" }, times + misText(info)),
+        el("p", { class: "ng-hint__text" }, ...misAdviceNodes(info))));
     }
   } else if ((r.weak_topics || []).length) {
     box.append(el("p", { class: "t-lead" },
@@ -482,7 +974,7 @@ async function openPlan() {
   const body = $("plan-body");
   body.replaceChildren(el("div", { class: "loading" }, "AI складає план…"));
   const misconceptions = [...new Set(state.result.misconceptions || [])]
-    .map((id) => (MISCONCEPTIONS[id] ? MISCONCEPTIONS[id].text : id));
+    .map((id) => (MISCONCEPTIONS[id] ? misText(MISCONCEPTIONS[id]) : id));
   try {
     const res = await api("/generate_plan", { weak_topics: weak.map(topicName), misconceptions });
     if (res.error || !res.personal_plan) throw new Error(res.error || "empty");
@@ -501,7 +993,7 @@ function renderFallbackPlan(body, weak) {
     body.append(el("div", { class: "ng-day" },
       el("div", { class: "ng-day__head" }, el("span", { class: "ng-day__num" }, `День ${i + 1}`), el("h3", { class: "ng-day__title" }, topicName(topic))),
       el("ul", { class: "ng-checklist" },
-        [mis ? `Повторити правило: ${mis.rule}` : "Повторити основні правила теми",
+        [mis ? misAdviceText(mis) : "Повторити основні правила теми",
           "Розвʼязати 3 прості завдання",
           "Розвʼязати 2 завдання середнього рівня",
           "Пройти міні-перевірку"].map((t) =>
@@ -612,13 +1104,14 @@ async function addHint(q, answer, misconceptionId) {
 
   const mis = MISCONCEPTIONS[misconceptionId || ""];
   try {
-    const res = await api("/ask_ai", { question: q.question, student_answer: hintContext(answer, n) });
+    const res = await api("/ask_ai", { question: q.question, student_answer: hintContext(answer, n), mode: "hint" });
     if (res.error || !res.ai_hint) throw new Error(res.error || "empty");
     renderAiText(text, res.ai_hint);
-  } catch {
+  } catch (err) {
     hideError();
+    aiUnavailableNote(err);
     text.replaceChildren(...(mis
-      ? ["Згадай правило: ", el("span", { class: "ng-mark" }, mis.rule), ". Як воно працює в цьому прикладі?"]
+      ? [...misAdviceNodes(mis), " Як це застосувати в цьому прикладі?"]
       : ["Спробуй розписати розвʼязання по кроках. Який перший крок тут потрібен?"]));
   }
 }
@@ -631,6 +1124,14 @@ function hintContext(answer, step) {
   return `${answer}. (Підказка ${step} з ${MAX_HINTS}. ${level})`;
 }
 
+// Якщо AI не відповів — показуємо запасний текст, але чесно позначаємо це й пишемо причину в консоль (F12).
+function aiUnavailableNote(err) {
+  const reason = err && err.message ? err.message : "невідома причина";
+  console.warn("[NMT Gap AI] /ask_ai не відповів:", reason);
+  return el("span", { class: "t-caption", style: "display:block;margin-top:4px" },
+    "AI зараз недоступний — це базова підказка. Причина в консолі браузера (F12).");
+}
+
 async function sendChat(message) {
   const q = currentTrainingQuestion();
   const chat = $("chat");
@@ -639,12 +1140,12 @@ async function sendChat(message) {
   chat.append(reply);
   const body = reply.querySelector(".ai-text");
   try {
-    const res = await api("/ask_ai", { question: q ? q.question : "", student_answer: message });
+    const res = await api("/ask_ai", { question: q ? q.question : "", student_answer: message, mode: "chat" });
     if (res.error || !res.ai_hint) throw new Error(res.error || "empty");
     renderAiText(body, res.ai_hint);
-  } catch {
+  } catch (err) {
     hideError();
-    body.replaceChildren("Я не дам готову відповідь, але допоможу тобі знайти її самостійно. З якого кроку ти почав би розвʼязання?");
+    body.replaceChildren("Я не дам готову відповідь, але допоможу тобі знайти її самостійно. З якого кроку ти почав би розвʼязання?", aiUnavailableNote(err));
   }
 }
 
@@ -699,6 +1200,58 @@ async function finishRecheck() {
   show("delta");
 }
 
+// ---------- Розділи й довідники ----------
+
+function currentSection() {
+  return SECTIONS.find((x) => x.id === state.section) || SECTIONS[0];
+}
+
+function renderSections() {
+  const box = $("section-picker");
+  if (!box) return;
+  box.replaceChildren(...SECTIONS.map((sec) => {
+    const count = sec.topics.filter((t) => TOPICS[t]).length;
+    return el("button", {
+      class: "ng-chip", type: "button", "data-section": sec.id,
+      "aria-pressed": sec.id === state.section ? "true" : "false",
+    }, sec.name, el("span", { class: "ng-chip__count" }, String(count)));
+  }));
+  const sec = currentSection();
+  const names = sec.topics.filter((t) => TOPICS[t]).map(topicName);
+  $("section-topics").textContent = `${sec.note ? sec.note + ": " : ""}${names.join(", ")}. До ${names.length * QUESTIONS_PER_TOPIC} питань.`;
+}
+
+function selectSection(id) {
+  state.section = id;
+  try { localStorage.setItem("nmt-section", id); } catch { /* немає сховища — не страшно */ }
+  renderSections();
+}
+
+// GET /meta: { topics: [{id, name, section?}] | {id: name}, skills: {...}, misconceptions: {...} }.
+// Якщо бекенд його не має — лишаються вбудовані дані.
+async function loadMeta() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000);
+  try {
+    const res = await fetch(API_BASE + "/meta", { signal: controller.signal });
+    if (!res.ok) return;
+    const meta = await res.json();
+    const list = Array.isArray(meta.topics)
+      ? meta.topics
+      : Object.entries(meta.topics || {}).map(([id, name]) => ({ id, name }));
+    for (const t of list) if (t && t.id) TOPICS[t.id] = t.name || TOPICS[t.id] || t.id;
+    if (meta.skills) SKILLS = { ...SKILLS, ...meta.skills };
+    if (meta.misconceptions) MISCONCEPTIONS = { ...MISCONCEPTIONS, ...meta.misconceptions, ...BASE_MISCONCEPTIONS };
+    // Теми, яких немає в жодному розділі, — в окремий розділ «Інші теми».
+    const known = new Set(SECTIONS.flatMap((x) => x.topics));
+    const extra = Object.keys(TOPICS).filter((t) => !known.has(t));
+    if (extra.length) SECTIONS.push({ id: "other", name: "Інші теми", note: null, topics: extra });
+    renderSections();
+  } catch { /* бекенд без /meta або недоступний — працюємо з вбудованими даними */ } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ---------- Тема ----------
 
 function applyTheme(theme) {
@@ -717,6 +1270,8 @@ function initTheme() {
 // ---------- Події ----------
 
 document.addEventListener("click", (e) => {
+  const chip = e.target.closest("[data-section]");
+  if (chip) { selectSection(chip.dataset.section); return; }
   const btn = e.target.closest("[data-action]");
   if (!btn) return;
   const action = btn.dataset.action;
@@ -761,3 +1316,6 @@ $("chat-form").addEventListener("submit", (e) => {
 });
 
 initTheme();
+try { const saved = localStorage.getItem("nmt-section"); if (saved && SECTIONS.some((x) => x.id === saved)) state.section = saved; } catch { /* ігноруємо */ }
+renderSections();
+loadMeta();

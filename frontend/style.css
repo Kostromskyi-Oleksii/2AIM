@@ -309,3 +309,22 @@ body { min-height: 100vh; }
   .ng-question__task { font-size: 24px; line-height: 32px; padding-inline: var(--space-3); }
   .ng-card { padding: var(--space-4); }
 }
+
+/* Вибір розділу діагностики */
+.section-choice { display: grid; gap: var(--space-3); }
+.section-picker { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ng-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: 40px; padding: 8px var(--space-3);
+  background: var(--paper-raised); color: var(--ink);
+  border: 1.5px solid var(--border-strong); border-radius: var(--radius-pill);
+  font: 600 14px/20px var(--font-text); cursor: pointer;
+}
+.ng-chip:hover { border-color: var(--ink); }
+.ng-chip[aria-pressed="true"] { background: var(--brand-soft); border-color: var(--brand); }
+.ng-chip__count {
+  min-width: 22px; padding: 0 6px; border-radius: var(--radius-pill);
+  background: var(--paper-sunken); color: var(--ink-muted);
+  font: 600 12px/20px var(--font-math); text-align: center;
+}
+.ng-chip[aria-pressed="true"] .ng-chip__count { background: var(--brand); color: var(--on-brand); }
